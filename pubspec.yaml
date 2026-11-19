@@ -1,0 +1,39 @@
+name: jigongshi
+description: 驰马时记 - 完全离线、零权限的本地工时记录与薪资计算 App，按国家/地区显示货币
+publish_to: 'none'
+version: 3.2.2+3202
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # 官方本地化（日期/时间选择器随语言切换，Flutter SDK 自带，零额外体积）
+  flutter_localizations:
+    sdk: flutter
+  # 本地数据库（数据只存本机）
+  sqflite: ^2.3.3
+  # 路径拼接工具
+  path: ^1.9.0
+  # 日期/时间格式化（需与 flutter_localizations 的 intl 版本一致）
+  intl: ^0.20.3
+  # 本地偏好存储（记住当前账本、打卡状态、是否看过引导）
+  shared_preferences: ^2.3.2
+  # 系统文件选择器（备份导出/导入，免存储权限）
+  file_picker: ^13.4.0
+  # 获取临时目录路径
+  path_provider: ^2.1.4
+  # 纯 Dart 的 SHA-256（应用锁 PIN 只存加盐校验值，不存明文）
+  crypto: ^3.0.6
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  # 迁移测试：在桌面 / CI 上直接跑真实 SQLite 文件，验证 v1→v3 升级
+  sqflite_common_ffi: ^2.3.3
+
+flutter:
+  uses-material-design: true
