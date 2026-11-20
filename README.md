@@ -6,8 +6,8 @@
 
 > 核心就是四件事：**记工 + 算账 + 查账 + 结算**。
 >
-> 当前版本 **3.2 结算对账版**（午休扣除、结算单、时间段筛选、删除可撤销、PIN 应用锁），
-> 变更明细见 [CHANGELOG.md](CHANGELOG.md)。
+> 当前版本 **3.2.2**（结算对账 + 图标改版），变更明细见 [CHANGELOG.md](CHANGELOG.md)。
+> 源码仓库：<https://github.com/ANDjkla90/Efficiency-Timer>
 
 ---
 
@@ -32,7 +32,7 @@
 ## 隐私承诺
 
 - **完全离线**：APK 中不含 INTERNET 权限，代码里没有任何网络请求，无统计 / 广告 / 崩溃上报 SDK。
-- **零权限**：Manifest 中无任何 `uses-permission`；备份走系统文件选择器（SAF），不需要存储权限。
+- **零权限**：Manifest 中无任何 `uses-permission`；备份走系统文件选择器（SAF），不需要存储权限。`android/app/src/debug/AndroidManifest.xml` 里那条 INTERNET 只供 Flutter 调试热重载用，不会进 release 包。
 - **关闭自动备份**：已设置 `allowBackup=false`，避免系统把本地数据库同步到云端。
 - **不收集数据**：无需注册登录，所有账目只存在本机 SQLite。
 - **数据归你**：备份文件由你导出到你指定的位置，是否保留完全由你决定；卸载即彻底清除。
@@ -76,6 +76,7 @@ jigongshi/
 │   ├── services/
 │   │   ├── pay_service.dart       # 统一算钱逻辑
 │   │   ├── settlement_service.dart # 结算周期/待结筛选/账单文本（纯函数）
+│   │   ├── app_settings.dart      # 语言/主题/地区与货币等偏好
 │   │   ├── app_lock.dart          # PIN 应用锁（盐 + SHA-256）
 │   │   ├── backup_service.dart    # 备份导出/导入
 │   │   └── data_notifier.dart     # 数据刷新通知
@@ -83,10 +84,11 @@ jigongshi/
 │   │   └── pin_pad.dart      # PIN 数字键盘（解锁/设置/验证共用）
 │   └── pages/
 │       ├── main_shell.dart        # 底部导航框架
+│       ├── splash_page.dart       # 开屏（仅首次启动展示品牌页）
 │       ├── home_page.dart         # 首页（快速记账工作台）
 │       ├── record_page.dart       # 记一笔 / 编辑 / 复制上次
 │       ├── record_list_page.dart  # 账目（按日期/雇主/工种 + 时间段筛选）
-│       ├── ledger_manage_page.dart# 雇主/账本管理
+│       ├── ledger_manage_page.dart # 雇主/账本管理
 │       ├── settlement_page.dart   # 结算对账
 │       ├── stats_page.dart        # 统计汇总
 │       ├── settings_page.dart     # 设置与备份
@@ -100,6 +102,8 @@ jigongshi/
 ├── store/icon-512.png        # 512px 商店图标
 └── test/                     # 测试
 ```
+
+> 上图为源码主干，省略了 `.gitignore`、`analysis_options.yaml`、`.metadata`、`pubspec.lock` 等配置文件。
 
 ## 本地构建
 
@@ -154,6 +158,18 @@ flutter build apk --release --split-per-abi
 > - CI 若要出正式签名的包，把 `.jks` 转成 base64 存 `KEYSTORE_BASE64`，密码存 `KEYSTORE_PASSWORD` / `KEY_PASSWORD`，在 workflow 里解码后再构建；不给 secrets 时 CI 只出 debug 签名包，用于验证能编译。
 > - R8 混淆只能增加反编译难度，**保护不了 Dart 业务逻辑**（AOT 快照仍可被逆向）。真正的护城河是本项目的离线与零权限，而不是混淆。
 
+## 测试
+
+```bash
+flutter analyze --no-fatal-infos   # 静态检查：error / warning 会失败，info 不拦
+flutter test                       # 43 项，全部应通过
+```
+
+- `test/logic_test.dart`：算钱、跨天、午休扣除、结算筛选与账单文本、PIN 递增延时、备份往返等纯逻辑。
+- `test/migration_test.dart`：用 `sqflite_common_ffi` 建真实 v1 / v2 库，走 `DatabaseHelper` 的 v2→v3 迁移，校验补列建表、日薪 09:00 归零、时薪 09:00 不被误改、金额与工时不变。
+
+CI（`.github/workflows/ci.yml`）在每次 push 与 PR 时跑同样的检查，并额外核验 release 包的权限清单与备份开关。
+
 ## 路线图
 
 - **月度趋势图**：按天/周的收入曲线与工时曲线（当前只有文字排行）。
@@ -171,6 +187,21 @@ flutter build apk --release --split-per-abi
 - 运行 `flutter analyze` 确保无 error；
 - 运行 `flutter test` 确保测试通过；
 - 核心记账必须保持离线——「不联网」是本项目的产品底线，任何引入网络请求、权限申请的改动需先开 issue 讨论。
+
+### 提交信息
+
+一行式 `类型: 说明`，类型用 `feat` / `fix` / `docs` / `refactor` / `test` / `chore` / `build` / `ci`；说明写清「改了什么、为什么」，例如：
+
+- `feat: 结算单支持按自定义周期生成`
+- `fix: 跨天记录在首页误显示为 0 分钟`
+- `docs: 补测试方法与提交约定`
+
+一个提交只做一件事。涉及数据库结构或备份格式的变更，必须在提交正文里写清迁移方式与兼容范围。
+
+### 分支与标签
+
+- 主分支 `master` 始终保持可打包状态；改功能走 `feat/xxx` 分支，合入前跑 `flutter analyze` 与 `flutter test`。
+- 发布打附注标签 `vX.Y.Z`（与 `pubspec.yaml` 的 `version` 一致），只打在主分支的发布提交上。
 
 ## 许可证
 

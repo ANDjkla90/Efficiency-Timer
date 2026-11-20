@@ -1,6 +1,8 @@
 name: jigongshi
 description: 驰马时记 - 完全离线、零权限的本地工时记录与薪资计算 App，按国家/地区显示货币
 publish_to: 'none'
+repository: https://github.com/ANDjkla90/Efficiency-Timer
+issue_tracker: https://github.com/ANDjkla90/Efficiency-Timer/issues
 version: 3.2.2+3202
 
 environment:

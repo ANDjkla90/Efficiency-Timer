@@ -67,3 +67,9 @@ android/app/key.properties
 .env.*
 *.pem
 *.p12
+
+# ===== 构建产物（安装包不进仓库，发布走 Releases） =====
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
